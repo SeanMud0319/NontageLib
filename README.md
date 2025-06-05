@@ -25,49 +25,26 @@ Minecraft 伺服器插件。
 InventoryBuilder inv = new InventoryBuilder(27, "測試介面");
 
 // 設置物品並添加點擊事件
-inv.
-
-setItem(
+inv.setItem(
     new ItemBuilder(Material.DIAMOND)
-        .
-
-setName("§b點擊我!")
-        .
-
-setLore("§7點擊獲得鑽石")
-        .
-
-build(),
-
-event ->{
+        .setName("§b點擊我!")
+        .setLore("§7點擊獲得鑽石")
+        .build(),
+event -> {
 Player player = event.getPlayer();
-        player.
-
-getInventory().
-
-addItem(new ItemStack(Material.DIAMOND));
-        player.
-
-sendMessage("§a你獲得了一個鑽石!");
+        player.getInventory().addItem(new ItemStack(Material.DIAMOND));
+        player.sendMessage("§a你獲得了一個鑽石!");
     },
             13
             );
 
 // 設置關閉事件
-            inv.
-
-setCloseEvent(event ->{
-        event.
-
-getPlayer().
-
-sendMessage("§c你關閉了介面!");
+            inv.setCloseEvent(event -> {
+        event.getPlayer().sendMessage("§c你關閉了介面!");
 });
 
 // 打開介面
-        player.
-
-openInventory(inv.getInventory());
+        player.openInventory(inv.getInventory());
 ```
 
 #### 自定義物品
@@ -202,49 +179,26 @@ developers create Minecraft server plugins more quickly and efficiently.
 InventoryBuilder inv = new InventoryBuilder(27, "Test Inventory");
 
 // Set an item with a click event
-inv.
-
-setItem(
+inv.setItem(
     new ItemBuilder(Material.DIAMOND)
-        .
-
-setName("§bClick me!")
-        .
-
-setLore("§7Click to get a diamond")
-        .
-
-build(),
-
-event ->{
+        .setName("§bClick me!")
+        .setLore("§7Click to get a diamond")
+        .build(),
+event -> {
 Player player = event.getPlayer();
-        player.
-
-getInventory().
-
-addItem(new ItemStack(Material.DIAMOND));
-        player.
-
-sendMessage("§aYou received a diamond!");
+        player.getInventory().addItem(new ItemStack(Material.DIAMOND));
+        player.sendMessage("§aYou received a diamond!");
     },
             13
             );
 
 // Set a close event
-            inv.
-
-setCloseEvent(event ->{
-        event.
-
-getPlayer().
-
-sendMessage("§cYou closed the inventory!");
+            inv.setCloseEvent(event -> {
+        event.getPlayer().sendMessage("§cYou closed the inventory!");
 });
 
 // Open the inventory
-        player.
-
-openInventory(inv.getInventory());
+        player.openInventory(inv.getInventory());
 ```
 
 #### Custom Items
