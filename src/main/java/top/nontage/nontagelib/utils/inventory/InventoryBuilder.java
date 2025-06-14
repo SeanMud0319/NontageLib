@@ -7,6 +7,7 @@ import org.bukkit.inventory.Inventory;
 import org.bukkit.inventory.ItemStack;
 import top.nontage.nontagelib.utils.reflection.ReflectionUtils;
 
+import java.util.Arrays;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Objects;
@@ -125,6 +126,10 @@ public class InventoryBuilder {
     public InventoryBuilder setClickable(boolean flag, int start, int end) {
         for (; start <= end; start++)
             clickable[start] = flag;
+        return this;
+    }
+    public InventoryBuilder setAllClickable(boolean flag) {
+        Arrays.fill(clickable, flag);
         return this;
     }
     public InventoryBuilder setLockedInv(boolean flag) {
