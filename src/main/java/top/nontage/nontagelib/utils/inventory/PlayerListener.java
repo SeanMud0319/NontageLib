@@ -5,6 +5,7 @@ import org.bukkit.event.EventPriority;
 import org.bukkit.event.Listener;
 import org.bukkit.event.inventory.InventoryClickEvent;
 import org.bukkit.event.inventory.InventoryCloseEvent;
+import org.bukkit.event.inventory.InventoryDragEvent;
 import org.bukkit.event.player.PlayerQuitEvent;
 
 public class PlayerListener implements Listener {
@@ -15,6 +16,10 @@ public class PlayerListener implements Listener {
             return;
         }
         InventoryListener.inventoryClickEvent(e);
+    }
+    @EventHandler(priority = EventPriority.MONITOR)
+    public void InventoryDragEvent(InventoryDragEvent e) {
+        InventoryListener.inventoryDragEvent(e);
     }
 
     @EventHandler(priority = EventPriority.MONITOR)

@@ -4,6 +4,7 @@ package top.nontage.nontagelib.utils.inventory;
 import org.bukkit.Bukkit;
 import org.bukkit.entity.Player;
 import org.bukkit.inventory.Inventory;
+import org.bukkit.inventory.InventoryHolder;
 import org.bukkit.inventory.ItemStack;
 import top.nontage.nontagelib.utils.reflection.ReflectionUtils;
 
@@ -18,6 +19,12 @@ public class InventoryBuilder {
     public final Map<Integer, Consumer<ClickInventoryEvent>> clickEvents = new HashMap<>();
     public final boolean[] clickable;
     public boolean lockedInv = false;
+    public boolean allowableShiftClickDown = true;
+    public boolean allowableDrag = true;
+    public boolean allowableDoubleClickDown = true;
+    public boolean allowableShiftClickUp = true;
+    public boolean allowableDoubleClickUp = true;
+
     public Consumer<ClickInventoryEvent> allClickEvent;
     public Consumer<CloseInventoryEvent> closeInventoryEvent;
     private final Player player;
@@ -32,6 +39,13 @@ public class InventoryBuilder {
         inventory = Bukkit.createInventory(null, size, title);
         clickable = new boolean[size + 36];
         this.player = player;
+        InventoryListener.inventoryMap.put(this, player);
+    }
+
+    public InventoryBuilder(InventoryHolder holder, int size, String title) {
+        inventory = Bukkit.createInventory(holder, size, title);
+        clickable = new boolean[size + 36];
+        this.player = null;
         InventoryListener.inventoryMap.put(this, player);
     }
 
@@ -128,12 +142,32 @@ public class InventoryBuilder {
             clickable[start] = flag;
         return this;
     }
+
     public InventoryBuilder setAllClickable(boolean flag) {
         Arrays.fill(clickable, flag);
         return this;
     }
+
     public InventoryBuilder setLockedInv(boolean flag) {
         lockedInv = flag;
         return this;
+    }
+
+    public void setAllowableShiftClickDown(boolean flag) {
+        this.allowableShiftClickDown = flag;
+    }
+
+    public void setAllowableDrag(boolean flag) {
+        this.allowableDrag = flag;
+    }
+
+    public void setAllowableDoubleClickDown(boolean allowableDoubleClickDown) {
+        this.allowableDoubleClickDown = allowableDoubleClickDown;
+    }
+    public void setAllowableShiftClickUp(boolean flag) {
+        this.allowableShiftClickUp = flag;
+    }
+    public void setAllowableDoubleClickUp(boolean allowableDoubleClickUp) {
+        this.allowableDoubleClickUp = allowableDoubleClickUp;
     }
 }
