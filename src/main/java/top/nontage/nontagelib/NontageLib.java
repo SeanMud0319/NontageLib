@@ -1,8 +1,7 @@
 package top.nontage.nontagelib;
 
-import org.bukkit.Bukkit;
 import org.bukkit.plugin.java.JavaPlugin;
-import top.nontage.nontagelib.utils.inventory.PlayerListener;
+import top.nontage.nontagelib.listener.ListenerRegister;
 
 public final class NontageLib extends JavaPlugin {
     private static NontageLib instance;
@@ -10,7 +9,7 @@ public final class NontageLib extends JavaPlugin {
     @Override
     public void onEnable() {
         instance = this;
-        Bukkit.getPluginManager().registerEvents(new PlayerListener(), this);
+        ListenerRegister.registerAll(this);
     }
 
     public static NontageLib getInstance() {
