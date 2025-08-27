@@ -1,7 +1,14 @@
 package top.nontage.nontagelib.config;
 
-import java.lang.reflect.*;
-import java.util.*;
+import java.lang.reflect.Field;
+import java.lang.reflect.Modifier;
+import java.util.ArrayList;
+import java.util.Collection;
+import java.util.HashSet;
+import java.util.LinkedHashMap;
+import java.util.List;
+import java.util.Map;
+import java.util.Set;
 
 public class ConfigUtils {
 
@@ -59,6 +66,58 @@ public class ConfigUtils {
                         ", actual value type: " + (value != null ? value.getClass().getName() : "null"));
                 e.printStackTrace();
             }
+        }
+    }
+
+    public static Map<String, Object> toMap(Object obj) {
+        Map<String, Object> map = new LinkedHashMap<>();
+        Class<?> clazz = obj.getClass();
+        for (Field field : clazz.getDeclaredFields()) {
+            if (Modifier.isStatic(field.getModifiers())) continue;
+
+            field.setAccessible(true);
+            String name = field.getName();
+            try {
+                Object value = field.get(obj);
+                if (value == null) continue;
+
+                if (isPrimitiveOrWrapper(value.getClass()) || value instanceof String || value.getClass().isEnum()) {
+                    map.put(name, value);
+                } else if (value instanceof Map<?, ?> m) {
+                    Map<Object, Object> subMap = new LinkedHashMap<>();
+                    m.forEach((k, v) -> subMap.put(k, toMapIfNeeded(v)));
+                    map.put(name, subMap);
+                } else if (value instanceof Collection<?> c) {
+                    List<Object> list = new ArrayList<>();
+                    for (Object item : c) {
+                        list.add(toMapIfNeeded(item));
+                    }
+                    map.put(name, list);
+                } else {
+                    map.put(name, toMap(value));
+                }
+            } catch (IllegalAccessException e) {
+                e.printStackTrace();
+            }
+        }
+        return map;
+    }
+
+    private static Object toMapIfNeeded(Object value) {
+        if (value == null) return null;
+        Class<?> type = value.getClass();
+        if (isPrimitiveOrWrapper(type) || type == String.class || type.isEnum()) {
+            return value;
+        } else if (value instanceof Map<?, ?>) {
+            Map<Object, Object> newMap = new LinkedHashMap<>();
+            ((Map<?, ?>) value).forEach((k, v) -> newMap.put(k, toMapIfNeeded(v)));
+            return newMap;
+        } else if (value instanceof Collection<?>) {
+            List<Object> list = new ArrayList<>();
+            for (Object item : (Collection<?>) value) list.add(toMapIfNeeded(item));
+            return list;
+        } else {
+            return toMap(value);
         }
     }
 

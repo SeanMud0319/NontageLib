@@ -32,7 +32,8 @@ public abstract class BaseConfig {
         try {
             file.getParentFile().mkdirs();
             try (Writer writer = new FileWriter(file)) {
-                yaml.dump(this, writer);
+                Map<String, Object> map = ConfigUtils.toMap(this);
+                yaml.dump(map, writer);
             }
         } catch (IOException e) {
             e.printStackTrace();
