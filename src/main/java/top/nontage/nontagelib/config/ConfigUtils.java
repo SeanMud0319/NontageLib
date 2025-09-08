@@ -33,31 +33,56 @@ public class ConfigUtils {
 
                 if (isPrimitiveOrWrapper(type) || type == String.class) {
                     if (!isFinal) field.set(target, convertValue(type, value));
+
                 } else if (type.isEnum() && value instanceof String) {
                     Object enumVal = Enum.valueOf((Class<? extends Enum>) type, (String) value);
                     if (!isFinal) field.set(target, enumVal);
+
                 } else if (Map.class.isAssignableFrom(type) && value instanceof Map) {
                     if (fieldValue == null && !isFinal) {
                         fieldValue = instantiateCollection(type);
                         field.set(target, fieldValue);
                     }
-                    Map<Object, Object> mapInstance = (Map<Object, Object>) fieldValue;
-                    mapInstance.clear();
+                    Map<Object, Object> mapInstance = (Map<Object, Object>) field.get(target);
+
+                    try {
+                        mapInstance.clear();
+                    } catch (UnsupportedOperationException ex) {
+                        mapInstance = new LinkedHashMap<>(mapInstance);
+                        if (!isFinal) field.set(target, mapInstance);
+                        mapInstance.clear();
+                    }
+
                     mapInstance.putAll((Map<?, ?>) value);
+
                 } else if (Collection.class.isAssignableFrom(type) && value instanceof Collection) {
                     if (fieldValue == null && !isFinal) {
                         fieldValue = instantiateCollection(type);
                         field.set(target, fieldValue);
                     }
-                    Collection<Object> collInstance = (Collection<Object>) fieldValue;
-                    collInstance.clear();
+                    Collection<Object> collInstance = (Collection<Object>) field.get(target);
+
+                    try {
+                        collInstance.clear();
+                    } catch (UnsupportedOperationException ex) {
+                        if (collInstance instanceof Set)
+                            collInstance = new HashSet<>(collInstance);
+                        else
+                            collInstance = new ArrayList<>(collInstance);
+
+                        if (!isFinal) field.set(target, collInstance);
+                        collInstance.clear();
+                    }
+
                     collInstance.addAll((Collection<?>) value);
-                } else if (value instanceof Map) {
+                }
+                else if (value instanceof Map) {
                     if (fieldValue == null && !isFinal) {
                         fieldValue = type.getDeclaredConstructor().newInstance();
                         field.set(target, fieldValue);
                     }
-                    applyValues(fieldValue, (Map<String, Object>) value);
+                    applyValues(field.get(target), (Map<String, Object>) value);
+
                 } else {
                     if (!isFinal) field.set(target, value);
                 }
@@ -147,7 +172,10 @@ public class ConfigUtils {
     }
 
     private static Object instantiateCollection(Class<?> type) throws Exception {
-        if (!type.isInterface()) return type.getDeclaredConstructor().newInstance();
+        if (!type.isInterface()) {
+            return type.getDeclaredConstructor().newInstance();
+        }
+
         if (List.class.isAssignableFrom(type)) return new ArrayList<>();
         if (Set.class.isAssignableFrom(type)) return new HashSet<>();
         if (Map.class.isAssignableFrom(type)) return new LinkedHashMap<>();
@@ -156,26 +184,22 @@ public class ConfigUtils {
 
     public static String toYamlStringWithComments(Object obj) {
         StringBuilder sb = new StringBuilder();
-        toYamlStringWithComments(obj, sb, 0, true);
+        toYamlStringWithComments(obj, sb, 0);
         return sb.toString();
     }
 
-    private static void toYamlStringWithComments(Object obj, StringBuilder sb, int indent, boolean isTopLevel) {
+    private static void toYamlStringWithComments(Object obj, StringBuilder sb, int indent) {
         if (obj == null) return;
         Class<?> clazz = obj.getClass();
-
         for (Field field : clazz.getDeclaredFields()) {
             if (Modifier.isStatic(field.getModifiers())) continue;
             field.setAccessible(true);
-
             try {
                 Object value = field.get(obj);
                 if (value == null) continue;
 
                 YamlComment comment = field.getAnnotation(YamlComment.class);
-                if (comment == null) {
-                    comment = value.getClass().getAnnotation(YamlComment.class);
-                }
+                if (comment == null) comment = value.getClass().getAnnotation(YamlComment.class);
 
                 if (comment != null) {
                     String[] commentLines = comment.lines().split("\n");
@@ -184,15 +208,24 @@ public class ConfigUtils {
                         sb.append("# ").append(line.stripLeading()).append("\n");
                     }
                 }
-
                 appendIndent(sb, indent);
                 sb.append(field.getName()).append(": ");
-
-                if (isPrimitiveOrWrapper(value.getClass()) || value instanceof String || value.getClass().isEnum()) {
-                    sb.append(value).append("\n");
-                } else {
+                if (value instanceof Map<?, ?> map) {
                     sb.append("\n");
-                    toYamlStringWithComments(value, sb, indent + 2, false);
+                    for (Map.Entry<?, ?> entry : map.entrySet()) {
+                        appendIndent(sb, indent + 2);
+                        sb.append(entry.getKey()).append(": ");
+                        appendYamlValue(sb, entry.getValue(), indent + 4);
+                    }
+                } else if (value instanceof Collection<?> coll) {
+                    sb.append("\n");
+                    for (Object item : coll) {
+                        appendIndent(sb, indent + 2);
+                        sb.append("- ");
+                        appendYamlValue(sb, item, indent + 4);
+                    }
+                } else {
+                    appendYamlValue(sb, value, indent + 2);
                 }
             } catch (IllegalAccessException e) {
                 e.printStackTrace();
@@ -200,7 +233,35 @@ public class ConfigUtils {
         }
     }
 
+    private static void appendYamlValue(StringBuilder sb, Object value, int indent) {
+        if (value == null) {
+            sb.append("null\n");
+        } else if (value instanceof String str) {
+            sb.append("\"").append(str.replace("\"", "\\\"")).append("\"\n");
+        } else if (isPrimitiveOrWrapper(value.getClass()) || value.getClass().isEnum()) {
+            sb.append(value).append("\n");
+        } else if (value instanceof Map<?, ?> map) {
+            sb.append("\n");
+            for (Map.Entry<?, ?> entry : map.entrySet()) {
+                appendIndent(sb, indent);
+                sb.append(entry.getKey()).append(": ");
+                appendYamlValue(sb, entry.getValue(), indent + 2);
+            }
+        } else if (value instanceof Collection<?> coll) {
+            sb.append("\n");
+            for (Object item : coll) {
+                appendIndent(sb, indent);
+                sb.append("- ");
+                appendYamlValue(sb, item, indent + 2);
+            }
+        } else {
+            sb.append("\n");
+            toYamlStringWithComments(value, sb, indent);
+        }
+    }
+
     private static void appendIndent(StringBuilder sb, int indent) {
         sb.append(" ".repeat(Math.max(0, indent)));
     }
+
 }
