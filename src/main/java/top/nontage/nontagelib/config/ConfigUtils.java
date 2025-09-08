@@ -202,7 +202,7 @@ public class ConfigUtils {
                 if (comment == null) comment = value.getClass().getAnnotation(YamlComment.class);
 
                 if (comment != null) {
-                    String[] commentLines = comment.lines().split("\n");
+                    String[] commentLines = comment.value().split("\n");
                     for (String line : commentLines) {
                         appendIndent(sb, indent);
                         sb.append("# ").append(line.stripLeading()).append("\n");
