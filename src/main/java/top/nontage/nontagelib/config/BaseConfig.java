@@ -32,13 +32,14 @@ public abstract class BaseConfig {
         try {
             file.getParentFile().mkdirs();
             try (Writer writer = new FileWriter(file)) {
-                Map<String, Object> map = ConfigUtils.toMap(this);
-                yaml.dump(map, writer);
+                String yamlString = ConfigUtils.toYamlStringWithComments(this);
+                writer.write(yamlString);
             }
         } catch (IOException e) {
             e.printStackTrace();
         }
     }
+
 
     public void reload() {
         if (!file.exists()) {

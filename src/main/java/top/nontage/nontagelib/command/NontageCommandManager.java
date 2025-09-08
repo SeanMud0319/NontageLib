@@ -57,6 +57,7 @@ public class NontageCommandManager {
                 command.execute(sender, label, args);
                 return true;
             }
+
             @Override
             public @NotNull List<String> tabComplete(CommandSender sender, String alias, String[] args, Location location) throws IllegalArgumentException {
                 return command.onTabComplete(sender, alias, args, location);
@@ -79,13 +80,9 @@ public class NontageCommandManager {
         try {
             CommandMap commandMap = getCommandMap();
             if (!(commandMap instanceof SimpleCommandMap)) return;
-            Field knownCommandsField = SimpleCommandMap.class.getDeclaredField("knownCommands");
-            knownCommandsField.setAccessible(true);
-            @SuppressWarnings("unchecked")
-            Map<String, Command> knownCommands = (Map<String, Command>) knownCommandsField.get(commandMap);
+
             List<Command> cmds = pluginCommands.remove(plugin);
             if (cmds == null) return;
-            knownCommands.entrySet().removeIf(entry -> cmds.contains(entry.getValue()));
 
             for (Command cmd : cmds) {
                 cmd.unregister(commandMap);
@@ -95,4 +92,6 @@ public class NontageCommandManager {
             e.printStackTrace();
         }
     }
+
+
 }

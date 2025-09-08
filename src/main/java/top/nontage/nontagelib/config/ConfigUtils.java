@@ -1,5 +1,7 @@
 package top.nontage.nontagelib.config;
 
+import top.nontage.nontagelib.annotations.YamlComment;
+
 import java.lang.reflect.Field;
 import java.lang.reflect.Modifier;
 import java.util.ArrayList;
@@ -150,5 +152,55 @@ public class ConfigUtils {
         if (Set.class.isAssignableFrom(type)) return new HashSet<>();
         if (Map.class.isAssignableFrom(type)) return new LinkedHashMap<>();
         throw new IllegalArgumentException("Cannot instantiate interface type: " + type.getName());
+    }
+
+    public static String toYamlStringWithComments(Object obj) {
+        StringBuilder sb = new StringBuilder();
+        toYamlStringWithComments(obj, sb, 0, true);
+        return sb.toString();
+    }
+
+    private static void toYamlStringWithComments(Object obj, StringBuilder sb, int indent, boolean isTopLevel) {
+        if (obj == null) return;
+        Class<?> clazz = obj.getClass();
+
+        for (Field field : clazz.getDeclaredFields()) {
+            if (Modifier.isStatic(field.getModifiers())) continue;
+            field.setAccessible(true);
+
+            try {
+                Object value = field.get(obj);
+                if (value == null) continue;
+
+                YamlComment comment = field.getAnnotation(YamlComment.class);
+                if (comment == null) {
+                    comment = value.getClass().getAnnotation(YamlComment.class);
+                }
+
+                if (comment != null) {
+                    String[] commentLines = comment.lines().split("\n");
+                    for (String line : commentLines) {
+                        appendIndent(sb, indent);
+                        sb.append("# ").append(line.stripLeading()).append("\n");
+                    }
+                }
+
+                appendIndent(sb, indent);
+                sb.append(field.getName()).append(": ");
+
+                if (isPrimitiveOrWrapper(value.getClass()) || value instanceof String || value.getClass().isEnum()) {
+                    sb.append(value).append("\n");
+                } else {
+                    sb.append("\n");
+                    toYamlStringWithComments(value, sb, indent + 2, false);
+                }
+            } catch (IllegalAccessException e) {
+                e.printStackTrace();
+            }
+        }
+    }
+
+    private static void appendIndent(StringBuilder sb, int indent) {
+        sb.append(" ".repeat(Math.max(0, indent)));
     }
 }
