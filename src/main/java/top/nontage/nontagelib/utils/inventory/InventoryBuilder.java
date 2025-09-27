@@ -16,6 +16,7 @@ import java.util.function.Consumer;
 
 
 public class InventoryBuilder {
+    private String title;
     public final Map<Integer, Consumer<ClickInventoryEvent>> clickEvents = new HashMap<>();
     public final boolean[] clickable;
     public boolean lockedInv = false;
@@ -28,7 +29,7 @@ public class InventoryBuilder {
     public Consumer<ClickInventoryEvent> allClickEvent;
     public Consumer<CloseInventoryEvent> closeInventoryEvent;
     private final Player player;
-    private final Inventory inventory;
+    private Inventory inventory;
 
     public InventoryBuilder(int size, String title) {
         this(null, size, title);
@@ -58,7 +59,16 @@ public class InventoryBuilder {
     }
 
     public void setTitle(String title) {
-        ReflectionUtils.setField(Objects.requireNonNull(ReflectionUtils.getField(inventory, inventory.getClass().getSuperclass(), "inventory")), "title", title);
+        if (title == null || title.equals(this.title)) return;
+        this.title = title;
+        Inventory newInventory = Bukkit.createInventory(inventory.getHolder(), inventory.getSize(), title);
+        for (int i = 0; i < inventory.getSize(); i++) {
+            ItemStack item = inventory.getItem(i);
+            if (item != null) {
+                newInventory.setItem(i, item.clone());
+            }
+        }
+        this.inventory = newInventory;
     }
 
     public InventoryBuilder setCloseEvent(Consumer<CloseInventoryEvent> e) {
