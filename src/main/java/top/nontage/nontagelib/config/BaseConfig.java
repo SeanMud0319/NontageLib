@@ -24,7 +24,7 @@ public abstract class BaseConfig {
 
     private File file;
 
-    void initFile(File file) {
+    protected void initFile(File file) {
         this.file = file;
     }
 

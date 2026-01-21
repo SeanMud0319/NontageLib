@@ -1,7 +1,6 @@
 name: NontageLib
 version: '1.0-SNAPSHOT'
 main: top.nontage.nontagelib.NontageLib
-api-version: '1.20'
 authors: [ Nontage ]
 description: A library for Nontage plugins
 load: POSTWORLD

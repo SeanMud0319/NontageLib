@@ -4,6 +4,8 @@ import top.nontage.nontagelib.annotations.YamlComment;
 
 import java.lang.reflect.Field;
 import java.lang.reflect.Modifier;
+import java.lang.reflect.ParameterizedType;
+import java.lang.reflect.Type;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.HashSet;
@@ -44,18 +46,12 @@ public class ConfigUtils {
                         field.set(target, fieldValue);
                     }
                     Map<Object, Object> mapInstance = (Map<Object, Object>) field.get(target);
+                    mapInstance.clear();
 
-                    try {
-                        mapInstance.clear();
-                    } catch (UnsupportedOperationException ex) {
-                        mapInstance = new LinkedHashMap<>(mapInstance);
-                        if (!isFinal) field.set(target, mapInstance);
-                        mapInstance.clear();
-                    }
+                    mapInstance.putAll(convertMapValues(field, (Map<?, ?>) value));
 
-                    mapInstance.putAll((Map<?, ?>) value);
-
-                } else if (Collection.class.isAssignableFrom(type) && value instanceof Collection) {
+                }
+                else if (Collection.class.isAssignableFrom(type) && value instanceof Collection) {
                     if (fieldValue == null && !isFinal) {
                         fieldValue = instantiateCollection(type);
                         field.set(target, fieldValue);
@@ -73,8 +69,7 @@ public class ConfigUtils {
                         if (!isFinal) field.set(target, collInstance);
                         collInstance.clear();
                     }
-
-                    collInstance.addAll((Collection<?>) value);
+                    collInstance.addAll(convertCollectionValues(field, (Collection<?>) value));
                 }
                 else if (value instanceof Map) {
                     if (fieldValue == null && !isFinal) {
@@ -170,6 +165,51 @@ public class ConfigUtils {
         if (type == byte.class || type == Byte.class) return num.byteValue();
         return value;
     }
+
+    @SuppressWarnings("unchecked")
+    private static Map<Object, Object> convertMapValues(Field field, Map<?, ?> rawMap) throws Exception {
+        Map<Object, Object> result = new LinkedHashMap<>();
+        Class<?> valueType = getGenericType(field, 1);
+        for (Map.Entry<?, ?> entry : rawMap.entrySet()) {
+            Object v = entry.getValue();
+            if (v instanceof Map && valueType != null && !isPrimitiveOrWrapper(valueType) && valueType != String.class) {
+                Object obj = valueType.getDeclaredConstructor().newInstance();
+                applyValues(obj, (Map<String, Object>) v);
+                result.put(entry.getKey(), obj);
+            } else {
+                result.put(entry.getKey(), v);
+            }
+        }
+        return result;
+    }
+
+    @SuppressWarnings("unchecked")
+    private static Collection<Object> convertCollectionValues(Field field, Collection<?> rawCollection) throws Exception {
+        Collection<Object> result = new ArrayList<>();
+        Class<?> valueType = getGenericType(field, 0);
+        for (Object item : rawCollection) {
+            if (item instanceof Map && valueType != null && !isPrimitiveOrWrapper(valueType) && valueType != String.class) {
+                Object obj = valueType.getDeclaredConstructor().newInstance();
+                applyValues(obj, (Map<String, Object>) item);
+                result.add(obj);
+            } else {
+                result.add(item);
+            }
+        }
+        return result;
+    }
+
+    private static Class<?> getGenericType(Field field, int index) {
+        try {
+            Type generic = field.getGenericType();
+            if (generic instanceof ParameterizedType pt) {
+                Type typeArgument = pt.getActualTypeArguments()[index];
+                if (typeArgument instanceof Class<?> c) return c;
+            }
+        } catch (Exception ignored) {}
+        return null;
+    }
+
 
     private static Object instantiateCollection(Class<?> type) throws Exception {
         if (!type.isInterface()) {
