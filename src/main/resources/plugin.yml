@@ -1,5 +1,6 @@
 name: NontageLib
 version: '1.0-SNAPSHOT'
+api-version: '1.13'
 main: top.nontage.nontagelib.NontageLib
 authors: [ Nontage ]
 description: A library for Nontage plugins

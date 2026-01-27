@@ -95,7 +95,7 @@ public class ConfigUtils {
         Map<String, Object> map = new LinkedHashMap<>();
         Class<?> clazz = obj.getClass();
         for (Field field : clazz.getDeclaredFields()) {
-            if (Modifier.isStatic(field.getModifiers())) continue;
+            if (Modifier.isStatic(field.getModifiers()) || Modifier.isTransient(field.getModifiers())) continue;
 
             field.setAccessible(true);
             String name = field.getName();
@@ -232,7 +232,7 @@ public class ConfigUtils {
         if (obj == null) return;
         Class<?> clazz = obj.getClass();
         for (Field field : clazz.getDeclaredFields()) {
-            if (Modifier.isStatic(field.getModifiers())) continue;
+            if (Modifier.isStatic(field.getModifiers()) || Modifier.isTransient(field.getModifiers())) continue;
             field.setAccessible(true);
             try {
                 Object value = field.get(obj);
